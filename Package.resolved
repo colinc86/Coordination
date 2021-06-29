@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "ApplicationKey",
+        "repositoryURL": "https://github.com/colinc86/ApplicationKey",
+        "state": {
+          "branch": null,
+          "revision": "68ac9e15276aa31e1a98ac26d6ddfa35a2bcc898",
+          "version": "0.1.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
