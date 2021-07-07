@@ -16,7 +16,7 @@ let package = Package(
   targets: [
     .target(
       name: "Coordination",
-      dependencies: []),
+      dependencies: ["ApplicationKey"]),
     .testTarget(
       name: "CoordinationTests",
       dependencies: ["Coordination"]),
