@@ -5,6 +5,7 @@
 //  Created by Colin Campbell on 6/29/21.
 //
 
+import ApplicationKey
 import Foundation
 
 /// Executes tasks.
@@ -49,28 +50,28 @@ extension Coordinator {
   /// - Returns: The state of the task.
   @discardableResult
   public func execute(_ task: Task) -> Task.State {
-    semaphore.wait()
+    self.semaphore.wait()
     
-    guard canExecute(task) else {
-      if shouldDeferExecution(of: task) {
-        pendingTasks.append(task)
-        semaphore.signal()
+    guard self.canExecute(task) else {
+      if self.shouldDeferExecution(of: task) {
+        self.pendingTasks.append(task)
+        self.semaphore.signal()
         return .deferred
       }
-      semaphore.signal()
+      self.semaphore.signal()
       return .cancelled
     }
     
-    executingTasks.append(task)
-    semaphore.signal()
+    self.executingTasks.append(task)
+    self.semaphore.signal()
     
     let executionClosure = {
-      task.execute { [weak self, weak task] in
-        self?.finished(task)
+      task.execute { [weak task] in
+        self.finished(task)
       }
     }
     
-    if task.queue != nil || queue == nil {
+    if queue == nil || task.queue != nil {
       executionClosure()
     }
     else if let queue = queue {
