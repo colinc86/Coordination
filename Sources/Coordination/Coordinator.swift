@@ -98,16 +98,21 @@ extension Coordinator {
       }
     }
     
-    // If we don't have a queue, or the task has a queue, then just execute the
-    // task.
-    if queue == nil || task.queue != nil {
-      executionClosure()
+    // If the task has a queue, then that takes precedence.
+    if let queue = task.queue {
+      queue.async {
+        executionClosure()
+      }
     }
-    // If we have a queue, then use it.
+    // If the coordinator has a queue, then use it next.
     else if let queue = queue {
       queue.async {
         executionClosure()
       }
+    }
+    // Since we don't have a queue, call the closure on the calling thread.
+    else {
+      executionClosure()
     }
     
     return .executing

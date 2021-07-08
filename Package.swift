@@ -11,12 +11,11 @@ let package = Package(
       targets: ["Coordination"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/colinc86/ApplicationKey", from: "0.1.0"),
   ],
   targets: [
     .target(
       name: "Coordination",
-      dependencies: ["ApplicationKey"]),
+      dependencies: []),
     .testTarget(
       name: "CoordinationTests",
       dependencies: ["Coordination"]),

@@ -97,29 +97,11 @@ public class Task: Equatable {
   
   /// Executes the task and calls its completion handler.
   ///
-  /// - Parameters:
-  ///   - usingQueue: Whether or not the task's queue should be used for execution.
-  ///   - completion: Called after the task finishes executing.
-  internal func execute(_ usingQueue: Bool = false, _ completion: (() -> Void)? = nil) {
-    let executeBlock = { [weak self] in
-      guard let self = self else {
-        completion?()
-        return
-      }
-      
-      self.finished = false
-      self.finishedCallback = completion
-      self.block(&self.finished)
-    }
-    
-    if let queue = queue, usingQueue {
-      queue.async {
-        executeBlock()
-      }
-    }
-    else {
-      executeBlock()
-    }
+  /// - Parameter completion: Called after the task finishes executing.
+  internal func execute(_ completion: (() -> Void)? = nil) {
+    finished = false
+    finishedCallback = completion
+    block(&self.finished)
   }
   
 }
