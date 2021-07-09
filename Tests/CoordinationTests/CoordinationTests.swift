@@ -9,17 +9,24 @@ final class CoordinationTests: XCTestCase {
   /// - Parameters:
   ///   - needsExpectation: If an expectation should be created.
   ///   - queue: The queue to use for the task.
-  ///   - sleepInterval: The interval to sleep for.
+  ///   - sleepInterval: The interval, in seconds, to sleep for.
   ///   - conditions: The task's conditions.
   /// - Returns: A task.
-  func createTask(needsExpectation: Bool = true, withQueue queue: DispatchQueue? = nil, sleepInterval: TimeInterval = 1.0, conditions: [Task.Condition] = []) -> Task {
+  func createTask(needsExpectation: Bool = true, withQueue queue: DispatchQueue? = nil, sleepInterval: Int = 1, conditions: [Task.Condition] = []) -> Task {
     var completionExpectation: XCTestExpectation?
     if needsExpectation {
       completionExpectation = expectation(description: "taskCompletion")
     }
 
-    let task = Task { ( finished: inout Bool) in
-      Thread.sleep(forTimeInterval: sleepInterval)
+    let task = Task { (finished: inout Bool, cancelled: inout Bool) in
+      for _ in 0 ..< Int(sleepInterval) {
+        Thread.sleep(forTimeInterval: 1.0)
+        
+        if cancelled {
+          break
+        }
+      }
+      
       finished = true
       completionExpectation?.fulfill()
     }

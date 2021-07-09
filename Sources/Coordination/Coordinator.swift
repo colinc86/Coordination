@@ -7,8 +7,22 @@
 
 import Foundation
 
-/// Executes tasks.
+/// Coordinates the execution of tasks.
 public class Coordinator {
+  
+  // MARK: Types
+  
+  #if (os(iOS) || os(tvOS))
+  /// The state of a coordinator.
+  public enum State {
+    
+    /// The coordinator is in the background.
+    case background
+    
+    /// The coordinator is in the foreground.
+    case foreground
+  }
+  #endif
   
   // MARK: Static properties
   
@@ -34,6 +48,14 @@ public class Coordinator {
   /// An array of tasks that are awaiting execution.
   private var pendingTasks = [Task]()
   
+  #if (os(iOS) || os(tvOS))
+  /// The current background state of the coordinator.
+  private(set) var state: State = .foreground
+  
+  /// Keeps track of background state.
+  private var backgroundNotifier = BackgroundNotifier()
+  #endif
+  
   // MARK: Initializers
   
   /// Initializes a coordinator.
@@ -41,6 +63,10 @@ public class Coordinator {
   /// - Parameter queue: An optional queue to execute tasks on.
   public init(queue: DispatchQueue? = nil) {
     self.queue = queue
+    
+    #if (os(iOS) || os(tvOS))
+    backgroundNotifier.delegate = self
+    #endif
   }
   
 }
@@ -55,8 +81,43 @@ extension Coordinator {
   /// - Returns: The state of the task.
   @discardableResult
   public func execute(_ task: Task) -> Task.State {
-    // Wrap the next portion of code in our semaphore so everything is set
-    // before we potentially begin executing the task.
+    let taskState = determineState(of: task)
+    
+    if taskState == .executing {
+      delegate?.coordinator(self, willExecute: task)
+      
+      let execution = { [weak self] in
+        guard let self = self else { return }
+        self.delegate?.coordinator(self, finishedExecuting: task)
+        self.finished(task)
+      }
+      
+      #if (os(iOS) || os(tvOS))
+      if task is BackgroundTask && state == .background {
+        (task as? BackgroundTask)?.executeInBackground(on: queue, execution)
+      }
+      else {
+        task.execute(on: queue, execution)
+      }
+      #else
+      task.execute(on: queue, execution)
+      #endif
+    }
+    
+    return taskState
+  }
+  
+}
+
+// MARK: - Private methods
+
+extension Coordinator {
+  
+  /// Determines the desired state of a task.
+  ///
+  /// - Parameter task: The task.
+  /// - Returns: The tasks desired state.
+  private func determineState(of task: Task) -> Task.State {
     semaphore.wait()
     
     // Can we execute the task?
@@ -64,6 +125,7 @@ extension Coordinator {
       // We can't execute the task right now, but can we defer its execution?
       if shouldDeferExecution(of: task) {
         // We should defer the tasks execution...
+        task.safeState = .deferred
         pendingTasks.append(task)
         
         // Clean up and inform our delegate that we deferred execution.
@@ -73,55 +135,19 @@ extension Coordinator {
       }
       
       // We can't defer execution, so cancel the task.
+      task.safeState = .cancelled
       semaphore.signal()
       delegate?.coordinator(self, didCancel: task)
       return .cancelled
     }
     
     // We are going to execute this task.
+    task.safeState = .executing
     executingTasks.append(task)
     semaphore.signal()
     
-    // Create a block that will execute the task from various queues.
-    let executionClosure = { [weak self] in
-      guard let self = self else { return }
-      
-      // Tell the delegate we're executing the task, and begin.
-      self.delegate?.coordinator(self, willExecute: task)
-      task.execute { [weak task] in
-        guard let task = task else { return }
-        
-        // Tell the delegate we've finished, and clean up.
-        self.delegate?.coordinator(self, finishedExecuting: task)
-        self.finished(task)
-      }
-    }
-    
-    // If the task has a queue, then that takes precedence.
-    if let queue = task.queue {
-      queue.async {
-        executionClosure()
-      }
-    }
-    // If the coordinator has a queue, then use it next.
-    else if let queue = queue {
-      queue.async {
-        executionClosure()
-      }
-    }
-    // Since we don't have a queue, call the closure on the calling thread.
-    else {
-      executionClosure()
-    }
-    
     return .executing
   }
-  
-}
-
-// MARK: - Private methods
-
-extension Coordinator {
   
   /// Determines if a task can be immediately executed.
   ///
@@ -165,6 +191,9 @@ extension Coordinator {
   private func finished(_ task: Task) {
     semaphore.wait()
     
+    // Update the task.
+    task.safeState = .none
+    
     // Get ride of the task in the executing tasks array.
     if let index = executingTasks.firstIndex(where: { $0 == task }) {
       executingTasks.remove(at: index)
@@ -190,3 +219,19 @@ extension Coordinator {
   }
   
 }
+
+#if (os(iOS) || os(tvOS))
+// MARK: - BackgroundNotifierDelegate methods
+
+extension Coordinator: BackgroundNotifierDelegate {
+  
+  func didEnterBackground() {
+    state = .background
+  }
+  
+  func willEnterForeground() {
+    state = .foreground
+  }
+  
+}
+#endif
