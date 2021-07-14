@@ -48,11 +48,13 @@ internal class BackgroundNotifier {
   init(delegate: BackgroundNotifierDelegate? = nil) {
     self.delegate = delegate
     
+    // Add the observers
     didEnterBackgroundNotificationObserver = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: backgroundNotificationQueue, using: receivedDidEnterBackgroundNotification)
     willEnterForegroundNotificationObserver = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: backgroundNotificationQueue, using: receivedWillEnterForegroundNotification)
   }
   
   deinit {
+    // Remove the observers
     if let observer = didEnterBackgroundNotificationObserver {
       NotificationCenter.default.removeObserver(observer)
       didEnterBackgroundNotificationObserver = nil

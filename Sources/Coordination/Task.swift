@@ -18,11 +18,16 @@ public class Task: Equatable {
   /// A task's execution condition.
   public enum Condition {
     
-    /// Cancel the receiver if the given task is currently executing.
-    case cancelIfExecuting(task: Task)
+    /// Cancel the receiver if any of the given tasks are currently executing.
+    case cancelIfExecuting(taskIn: [Task])
     
-    /// Defer the receiver's execution if the given task is currently executing.
-    case deferIfExecuting(task: Task)
+    /// Defer the receiver's execution if any of the given tasks are currently
+    /// executing.
+    case deferIfExecuting(taskIn: [Task])
+    
+    /// Cancels the execution of any of the given tasks to make way for
+    /// execution of the receiver.
+    case makeWayByCancelling(tasks: [Task])
   }
 
   /// A task's execution state.
@@ -90,7 +95,7 @@ public class Task: Equatable {
     }
   }
   
-  /// Indicatese that the task has been cancelled by a background task.
+  /// Indicatese that the task has been cancelled by the `cancel` method.
   internal var cancelled: Bool = false
   
   // MARK: Private properties
@@ -112,10 +117,10 @@ public class Task: Equatable {
   /// Initializes a task with a set of conditions.
   ///
   /// - Parameters:
+  ///   - queue: The queue to execute the block on.
   ///   - conditions: The task's conditions.
   ///   - block: The task's block to execute.
-  ///   - queue: The queue to execute the block on.
-  public init(conditions: [Condition], block: @escaping Block, queue: DispatchQueue? = nil) {
+  public init(queue: DispatchQueue? = nil, conditions: [Condition], block: @escaping Block) {
     identifier = UUID()
     self.conditions = conditions
     self.block = block
@@ -125,11 +130,10 @@ public class Task: Equatable {
   /// Initializes a task.
   ///
   /// - Parameters:
-  ///   - block: The task's block to execute.
   ///   - queue: The queue to execute the block on.
-  ///   - isBackgroundCapable: If the task can be backgrounded.
-  public convenience init(block: @escaping Block, queue: DispatchQueue? = nil) {
-    self.init(conditions: [], block: block, queue: queue)
+  ///   - block: The task's block to execute.
+  public convenience init(queue: DispatchQueue? = nil, block: @escaping Block) {
+    self.init(queue: queue, conditions: [], block: block)
   }
   
   // MARK: Overridable methods

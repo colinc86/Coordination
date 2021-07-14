@@ -9,7 +9,7 @@ import Foundation
 
 public protocol CoordinatorDelegate: AnyObject {
   
-  /// Asks the coordinator's delegate if the task can be executed.
+  /// Asks the coordinator's delegate if the task should be executed.
   ///
   /// This method is called at the end of the coordinator's decision to execute
   /// a task after any conditions have been evaluated.
@@ -18,7 +18,7 @@ public protocol CoordinatorDelegate: AnyObject {
   ///   - coordinator: The coordinator.
   ///   - task: The task that can be executed.
   ///   - decision: The coordinator's decision.
-  func coordinator(_ coordinator: Coordinator, canExecute task: Task, decision: Bool) -> Bool
+  func coordinator(_ coordinator: Coordinator, shouldExecute task: Task, decision: Bool) -> Bool
   
   /// Asks the coordinator's delegate if the task should be deferred.
   ///

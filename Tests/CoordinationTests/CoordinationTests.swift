@@ -170,7 +170,7 @@ final class CoordinationTests: XCTestCase {
     )
 
     XCTAssertEqual(
-      Coordinator.shared.execute(createTask(withQueue: DispatchQueue(label: "taskBQueue"), conditions: [Task.Condition.deferIfExecuting(task: taskA)])),
+      Coordinator.shared.execute(createTask(withQueue: DispatchQueue(label: "taskBQueue"), conditions: [Task.Condition.deferIfExecuting(taskIn: [taskA])])),
       .deferred,
       "The task should be deferred."
     )
@@ -189,7 +189,7 @@ final class CoordinationTests: XCTestCase {
     )
 
     XCTAssertEqual(
-      Coordinator.shared.execute(createTask(needsExpectation: false, withQueue: DispatchQueue(label: "taskBQueue"), conditions: [Task.Condition.cancelIfExecuting(task: taskA)])),
+      Coordinator.shared.execute(createTask(needsExpectation: false, withQueue: DispatchQueue(label: "taskBQueue"), conditions: [Task.Condition.cancelIfExecuting(taskIn: [taskA])])),
       .cancelled,
       "The task should be cancelled."
     )
