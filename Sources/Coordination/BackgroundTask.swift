@@ -19,7 +19,7 @@ public class BackgroundTask: Task {
   
   // MARK: Initializers
   
-  public override init(conditions: [Task.Condition], block: @escaping Task.Block, queue: DispatchQueue? = nil) {
+  public override init(queue: DispatchQueue? = nil, conditions: [Task.Condition], block: @escaping Task.Block) {
     super.init(conditions: conditions, block: block, queue: queue)
     backgroundNotifier.delegate = self
   }
